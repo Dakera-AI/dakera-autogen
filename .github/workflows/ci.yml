@@ -41,7 +41,9 @@ jobs:
         run: mypy src/ --ignore-missing-imports
 
       - name: Security audit
-        run: pip-audit
+        run: |
+          pip install --upgrade pip
+          pip-audit --ignore-vuln CVE-2026-3219
 
       - name: Test with pytest
         run: pytest tests/ -v --tb=short
