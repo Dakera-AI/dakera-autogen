@@ -23,8 +23,8 @@ class DakeraMemory:
     def query(self, query: str, top_k: int | None = None) -> list[dict[str, Any]]:
         k = top_k if top_k is not None else self._recall_k
         min_imp = self._min_importance if self._min_importance > 0.0 else None
-        memories = self._client.recall(self._agent_id, query=query, top_k=k, min_importance=min_imp)
-        return [m if isinstance(m, dict) else {"content": str(m)} for m in memories]
+        response = self._client.recall(self._agent_id, query=query, top_k=k, min_importance=min_imp)
+        return [m if isinstance(m, dict) else {"content": str(m)} for m in response.memories]
 
     def clear(self) -> None:
         """No-op: Dakera memories are persistent by design."""
