@@ -28,18 +28,25 @@ def test_add_stores_memory(memory):
 
 def test_query_returns_memories(memory):
     m, mock_client = memory
-    mock_client.recall.return_value = [{"content": "Project deadline is April 15"}]
+    mem = MagicMock(content="Project deadline is April 15", id="m-1", score=0.9)
+    mock_recall = MagicMock()
+    mock_recall.memories = [mem]
+    mock_client.recall.return_value = mock_recall
     results = m.query("What is the deadline?")
     assert len(results) == 1
+    assert results[0]["content"] == "Project deadline is April 15"
     mock_client.recall.assert_called_once_with(
         "agent-1", query="What is the deadline?", top_k=3, min_importance=None)
 
 
 def test_query_wraps_non_dict_results(memory):
     m, mock_client = memory
-    mock_client.recall.return_value = ["plain string"]
+    mem = MagicMock(content="plain string", id="m-2", score=0.8)
+    mock_recall = MagicMock()
+    mock_recall.memories = [mem]
+    mock_client.recall.return_value = mock_recall
     results = m.query("test")
-    assert results == [{"content": "plain string"}]
+    assert results[0]["content"] == "plain string"
 
 
 def test_clear_is_noop(memory):
