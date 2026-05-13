@@ -30,3 +30,9 @@ class DakeraMemory:
 
     def clear(self) -> None:
         """No-op: Dakera memories are persistent by design."""
+
+    def __repr__(self) -> str:
+        return (
+            f"DakeraMemory(agent_id={self._agent_id!r}, "
+            f"recall_k={self._recall_k}, min_importance={self._min_importance})"
+        )
