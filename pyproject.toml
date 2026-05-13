@@ -27,7 +27,7 @@ dependencies = ["dakera>=0.9.0"]
 
 [project.optional-dependencies]
 autogen = ["autogen-agentchat>=0.4.0"]
-dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "ruff>=0.1.0"]
+dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "ruff>=0.1.0", "mypy>=1.0.0", "pip-audit>=2.0.0"]
 
 [project.urls]
 Homepage = "https://github.com/dakera-ai/dakera-autogen"
@@ -50,3 +50,10 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true

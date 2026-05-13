@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -13,18 +15,21 @@ concurrency:
 
 jobs:
   test:
+    name: Python ${{ matrix.python-version }}
     runs-on: [self-hosted, linux, arm64]
     strategy:
+      fail-fast: false
       matrix:
         python-version: ${{ contains(github.event.pull_request.labels.*.name, 'full-matrix') && fromJson('["3.10","3.11","3.12"]') || fromJson('["3.10","3.12"]') }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
 
       - name: Install dependencies
         run: pip install -e ".[dev]"
@@ -32,5 +37,11 @@ jobs:
       - name: Lint with ruff
         run: ruff check .
 
+      - name: Type check with mypy
+        run: mypy src/ --ignore-missing-imports
+
+      - name: Security audit
+        run: pip-audit
+
       - name: Test with pytest
-        run: pytest tests/ -v
+        run: pytest tests/ -v --tb=short
