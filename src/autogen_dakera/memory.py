@@ -1,7 +1,9 @@
 """DakeraMemory — AutoGen memory backed by the Dakera AI memory platform."""
 
 from __future__ import annotations
+
 from typing import Any
+
 from dakera import DakeraClient
 
 
