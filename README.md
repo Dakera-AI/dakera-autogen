@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/Dakera-AI/dakera-autogen/actions/workflows/ci.yml/badge.svg)](https://github.com/Dakera-AI/dakera-autogen/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/autogen-dakera)](https://pypi.org/project/autogen-dakera/)
+[![Downloads](https://img.shields.io/pypi/dm/autogen-dakera)](https://pypi.org/project/autogen-dakera/)
 [![Python](https://img.shields.io/pypi/pyversions/autogen-dakera)](https://pypi.org/project/autogen-dakera/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
