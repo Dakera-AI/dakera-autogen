@@ -4,6 +4,11 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to upload assets to'
+        required: true
+        default: 'v0.1.0'
 
 permissions:
   contents: write
@@ -16,6 +21,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,6 +36,6 @@ jobs:
         run: python -m build
 
       - name: Upload to GitHub Release
-        run: gh release upload "${{ github.ref_name }}" dist/* --clobber
+        run: gh release upload "${{ inputs.tag || github.ref_name }}" dist/* --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
