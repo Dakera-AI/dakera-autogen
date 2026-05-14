@@ -26,10 +26,14 @@ memory = DakeraMemory(
 )
 
 turns = [
-    ("Human: What's the capital of France?", "AI: The capital of France is Paris."),
-    ("Human: What about Germany?", "AI: The capital of Germany is Berlin."),
-    ("Human: Which one has a larger population?", "AI: Berlin has ~3.7M, Paris ~2.1M (city proper). Berlin is larger."),
-    ("Human: I'm planning to visit the larger one next month.", "AI: Great choice! Berlin has amazing museums and nightlife."),
+    ("Human: What's the capital of France?",
+     "AI: The capital of France is Paris."),
+    ("Human: What about Germany?",
+     "AI: The capital of Germany is Berlin."),
+    ("Human: Which one has a larger population?",
+     "AI: Berlin has ~3.7M, Paris ~2.1M. Berlin is larger."),
+    ("Human: I'm planning to visit the larger one.",
+     "AI: Great choice! Berlin has amazing museums."),
 ]
 
 print("Storing conversation turns...")
