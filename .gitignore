@@ -9,3 +9,9 @@ build/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Secrets — private keys and credentials
+*.key
+*.pem
+*.p12
+credentials.json
