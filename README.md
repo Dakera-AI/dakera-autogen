@@ -190,8 +190,8 @@ memory = DakeraMemory(
 
 - [Dakera Server](https://github.com/Dakera-AI/dakera-deploy) — self-hosted memory server
 - [Dakera Python SDK](https://github.com/Dakera-AI/dakera-py) — low-level API client
-- [Documentation](https://dakera.ai/integrations/autogen)
-- [All integrations](https://github.com/Dakera-AI/dakera-integrations)
+- [Integration guide](https://dakera.ai/integrations/autogen.html) — full setup walkthrough
+- [All integrations](https://dakera.ai/integrations/)
 
 ---
 
