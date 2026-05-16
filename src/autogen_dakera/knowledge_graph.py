@@ -19,7 +19,9 @@ class DakeraKnowledgeGraph:
         result = self._client.knowledge_query(self._agent_id, query=query, **kwargs)
         return {"nodes": result.nodes, "edges": result.edges}
 
-    def traverse(self, entity_id: str, *, depth: int = 2, direction: str = "both") -> dict[str, Any]:
+    def traverse(
+        self, entity_id: str, *, depth: int = 2, direction: str = "both"
+    ) -> dict[str, Any]:
         """Traverse from an entity node."""
         result = self._client.knowledge_path(
             self._agent_id, source=entity_id, depth=depth, direction=direction
@@ -28,7 +30,9 @@ class DakeraKnowledgeGraph:
 
     def link(self, memory_id: str, entity_id: str, relation: str = "relates_to") -> None:
         """Link a memory to an entity."""
-        self._client.memory_link(self._agent_id, memory_id=memory_id, entity_id=entity_id, relation=relation)
+        self._client.memory_link(
+            self._agent_id, memory_id=memory_id, entity_id=entity_id, relation=relation
+        )
 
     def export(self) -> dict[str, Any]:
         """Export the full knowledge graph."""

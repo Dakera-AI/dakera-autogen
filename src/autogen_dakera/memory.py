@@ -66,8 +66,10 @@ class DakeraMemory:
     ) -> list[dict[str, Any]]:
         """Semantic recall with optional filtering."""
         k = top_k if top_k is not None else self._recall_k
-        min_imp = min_importance if min_importance is not None else (
-            self._min_importance if self._min_importance > 0.0 else None
+        min_imp = (
+            min_importance
+            if min_importance is not None
+            else (self._min_importance if self._min_importance > 0.0 else None)
         )
         kwargs: dict[str, Any] = {"top_k": k}
         if min_imp:
@@ -94,7 +96,9 @@ class DakeraMemory:
         result = self._client.search_memories(self._agent_id, query=query, top_k=k, alpha=alpha)
         return [{"content": m.content, "id": m.id, "score": m.score} for m in result.memories]
 
-    def batch_query(self, queries: list[str], top_k: int | None = None) -> list[list[dict[str, Any]]]:
+    def batch_query(
+        self, queries: list[str], top_k: int | None = None
+    ) -> list[list[dict[str, Any]]]:
         """Run multiple queries in batch."""
         k = top_k if top_k is not None else self._recall_k
         results = []
