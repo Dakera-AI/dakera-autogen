@@ -29,6 +29,10 @@ jobs:
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          DAKERA_AUTH_ENABLED: "false"
+          DAKERA_HOST: "0.0.0.0"
+          DAKERA_PORT: "3300"
         ports:
           - 3300:3300
         options: >-
@@ -36,7 +40,7 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
-          --health-start-period 10s
+          --health-start-period 15s
 
     steps:
       - uses: actions/checkout@v6
