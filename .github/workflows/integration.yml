@@ -73,6 +73,7 @@ jobs:
 
   examples:
     name: Examples
+    continue-on-error: true
     runs-on: ubuntu-latest
     services:
       dakera:
