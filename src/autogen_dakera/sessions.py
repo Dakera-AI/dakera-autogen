@@ -22,46 +22,52 @@ class DakeraSessionManager:
     def start(self, metadata: dict[str, Any] | None = None) -> str:
         """Start a new session. Returns session ID."""
         result = self._client.start_session(self._agent_id, metadata=metadata)
-        self._active_session_id = result.session_id
-        return result.session_id
+        session_id: str = result["id"]
+        self._active_session_id = session_id
+        return session_id
 
-    def end(self, summary: str | None = None) -> None:
+    def end(self) -> None:
         """End the active session."""
         if self._active_session_id is None:
             raise RuntimeError("No active session to end")
-        self._client.end_session(self._active_session_id, summary=summary)
+        self._client.end_session(self._active_session_id)
         self._active_session_id = None
 
     def get(self, session_id: str) -> dict[str, Any]:
         """Get session details."""
         result = self._client.get_session(session_id)
         return {
-            "id": result.id,
-            "agent_id": result.agent_id,
-            "started_at": result.started_at,
-            "ended_at": result.ended_at,
-            "metadata": result.metadata,
-            "memory_count": result.memory_count,
+            "id": result.get("id", session_id),
+            "agent_id": result.get("agent_id", ""),
+            "started_at": result.get("started_at"),
+            "ended_at": result.get("ended_at"),
+            "metadata": result.get("metadata"),
+            "memory_count": result.get("memory_count", 0),
         }
 
     def list(self, active_only: bool = False) -> list[dict[str, Any]]:
         """List sessions."""
-        result = self._client.list_sessions(self._agent_id, active_only=active_only)
+        sessions = self._client.list_sessions(self._agent_id, active_only=active_only)
         return [
             {
-                "id": s.id,
-                "started_at": s.started_at,
-                "ended_at": s.ended_at,
-                "memory_count": s.memory_count,
+                "id": s.get("id", ""),
+                "started_at": s.get("started_at"),
+                "ended_at": s.get("ended_at"),
+                "memory_count": s.get("memory_count", 0),
             }
-            for s in result.sessions
+            for s in sessions
         ]
 
     def memories(self, session_id: str) -> list[dict[str, Any]]:
         """Get all memories from a session."""
-        result = self._client.session_memories(session_id)
+        mems = self._client.session_memories(session_id)
         return [
-            {"id": m.id, "content": m.content, "importance": m.importance} for m in result.memories
+            {
+                "id": m.get("id", ""),
+                "content": m.get("content", ""),
+                "importance": m.get("importance", 0.0),
+            }
+            for m in mems
         ]
 
     def __enter__(self) -> DakeraSessionManager:

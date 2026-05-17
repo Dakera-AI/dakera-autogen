@@ -80,7 +80,7 @@ class DakeraMemory:
             kwargs["memory_type"] = memory_type
         memories = self._client.recall(self._agent_id, query=query, **kwargs)
         return [
-            {"content": m.content, "id": m.id, "score": m.score, "tags": m.tags}
+            {"content": m.content, "id": m.id, "score": m.score, "metadata": m.metadata}
             for m in memories.memories
         ]
 
@@ -88,13 +88,14 @@ class DakeraMemory:
         self,
         query: str,
         top_k: int | None = None,
-        *,
-        alpha: float = 0.5,
     ) -> list[dict[str, Any]]:
         """Combined vector + BM25 search."""
         k = top_k if top_k is not None else self._recall_k
-        result = self._client.search_memories(self._agent_id, query=query, top_k=k, alpha=alpha)
-        return [{"content": m.content, "id": m.id, "score": m.score} for m in result.memories]
+        results = self._client.search_memories(self._agent_id, query=query, top_k=k)
+        return [
+            {"content": m.get("content", ""), "id": m.get("id", ""), "score": m.get("score", 0.0)}
+            for m in results
+        ]
 
     def batch_query(
         self, queries: list[str], top_k: int | None = None
@@ -111,15 +112,16 @@ class DakeraMemory:
 
     def forget(self, memory_id: str) -> None:
         """Delete a specific memory."""
-        self._client.forget(self._agent_id, memory_id=memory_id)
+        self._client.forget(self._agent_id, memory_id)
 
     def batch_forget(self, memory_ids: list[str]) -> None:
         """Delete multiple memories."""
-        self._client.batch_forget(self._agent_id, memory_ids=memory_ids)
+        for mid in memory_ids:
+            self._client.forget(self._agent_id, mid)
 
     def update_importance(self, memory_id: str, importance: float) -> None:
         """Update a memory's importance score."""
-        self._client.update_importance(self._agent_id, memory_id=memory_id, importance=importance)
+        self._client.update_importance(self._agent_id, [memory_id], importance)
 
     def consolidate(self) -> Any:
         """Deduplicate and consolidate memories."""

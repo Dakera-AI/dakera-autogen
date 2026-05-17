@@ -14,35 +14,44 @@ class DakeraKnowledgeGraph:
         self._client = DakeraClient(api_url, api_key=api_key)
         self._agent_id = agent_id
 
-    def query(self, query: str, **kwargs: Any) -> dict[str, Any]:
-        """Query the knowledge graph."""
-        result = self._client.knowledge_query(self._agent_id, query=query, **kwargs)
-        return {"nodes": result.nodes, "edges": result.edges}
-
-    def traverse(
-        self, entity_id: str, *, depth: int = 2, direction: str = "both"
+    def query(
+        self,
+        root_id: str | None = None,
+        edge_type: str | None = None,
+        max_depth: int = 3,
+        limit: int = 100,
     ) -> dict[str, Any]:
-        """Traverse from an entity node."""
-        result = self._client.knowledge_path(
-            self._agent_id, source=entity_id, depth=depth, direction=direction
+        """Query the knowledge graph."""
+        result = self._client.knowledge_query(
+            self._agent_id, root_id=root_id, edge_type=edge_type, max_depth=max_depth, limit=limit
         )
-        return {"nodes": result.nodes, "edges": result.edges}
+        return {
+            "edges": [{"source": e.source_id, "target": e.target_id, "type": e.edge_type} for e in result.edges],
+            "node_count": result.node_count,
+            "edge_count": result.edge_count,
+        }
 
-    def link(self, memory_id: str, entity_id: str, relation: str = "relates_to") -> None:
-        """Link a memory to an entity."""
-        self._client.memory_link(
-            self._agent_id, memory_id=memory_id, entity_id=entity_id, relation=relation
-        )
+    def find_path(self, from_id: str, to_id: str) -> dict[str, Any]:
+        """Find shortest path between two memory nodes."""
+        result = self._client.knowledge_path(self._agent_id, from_id=from_id, to_id=to_id)
+        return {"path": result.path, "hop_count": result.hop_count}
+
+    def link(self, source_id: str, target_id: str, edge_type: str = "linked_by") -> None:
+        """Link two memories in the knowledge graph."""
+        self._client.memory_link(source_id, target_id, edge_type=edge_type)
 
     def export(self) -> dict[str, Any]:
         """Export the full knowledge graph."""
         result = self._client.knowledge_export(self._agent_id)
-        return {"nodes": result.nodes, "edges": result.edges}
+        return {
+            "edges": [{"source": e.source_id, "target": e.target_id, "type": e.edge_type} for e in result.edges],
+            "node_count": result.node_count,
+            "edge_count": result.edge_count,
+        }
 
-    def build(self) -> dict[str, Any]:
+    def build(self, memory_id: str | None = None, depth: int | None = None) -> dict[str, Any]:
         """Build/rebuild the knowledge graph from memories."""
-        result = self._client.knowledge_graph(self._agent_id)
-        return {"nodes": result.nodes, "edges": result.edges}
+        return self._client.knowledge_graph(self._agent_id, memory_id=memory_id, depth=depth)
 
     def summarize(self) -> dict[str, Any]:
         """Summarize the knowledge graph."""

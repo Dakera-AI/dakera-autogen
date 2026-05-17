@@ -14,27 +14,40 @@ class DakeraNamespaceManager:
         self._client = DakeraClient(api_url, api_key=api_key)
 
     def create(
-        self, name: str, *, dimension: int | None = None, metric: str | None = None, **kwargs: Any
+        self,
+        name: str,
+        *,
+        dimensions: int | None = None,
+        index_type: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Create a namespace."""
-        return self._client.create_namespace(name, dimension=dimension, metric=metric, **kwargs)
+        ns = self._client.create_namespace(
+            name, dimensions=dimensions, index_type=index_type, metadata=metadata
+        )
+        return {
+            "name": ns.name,
+            "dimensions": ns.dimensions,
+            "index_type": ns.index_type,
+            "vector_count": ns.vector_count,
+        }
 
     def get(self, name: str) -> dict[str, Any]:
         """Get namespace details."""
-        result = self._client.get_namespace(name)
+        ns = self._client.get_namespace(name)
         return {
-            "name": result.name,
-            "dimension": result.dimension,
-            "metric": result.metric,
-            "vector_count": result.vector_count,
+            "name": ns.name,
+            "dimensions": ns.dimensions,
+            "index_type": ns.index_type,
+            "vector_count": ns.vector_count,
         }
 
     def list(self) -> list[dict[str, Any]]:
         """List all namespaces."""
-        result = self._client.list_namespaces()
+        namespaces = self._client.list_namespaces()
         return [
-            {"name": ns.name, "dimension": ns.dimension, "vector_count": ns.vector_count}
-            for ns in result.namespaces
+            {"name": ns.name, "dimensions": ns.dimensions, "vector_count": ns.vector_count}
+            for ns in namespaces
         ]
 
     def configure(self, name: str, **kwargs: Any) -> None:
@@ -47,4 +60,9 @@ class DakeraNamespaceManager:
 
     def stats(self, name: str) -> dict[str, Any]:
         """Get namespace statistics."""
-        return self._client.get_index_stats(name)
+        s = self._client.get_index_stats(name)
+        return {
+            "total_vectors": s.total_vectors,
+            "dimensions": s.dimensions,
+            "index_type": s.index_type,
+        }

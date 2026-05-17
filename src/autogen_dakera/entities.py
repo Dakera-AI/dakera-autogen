@@ -14,19 +14,19 @@ class DakeraEntityExtractor:
         self._client = DakeraClient(api_url, api_key=api_key)
         self._agent_id = agent_id
 
-    def extract(self, text: str) -> list[dict[str, Any]]:
+    def extract(self, text: str, entity_types: list[str] | None = None) -> list[dict[str, Any]]:
         """Extract entities from text."""
-        result = self._client.extract_entities(self._agent_id, text=text)
+        result = self._client.extract_entities(text, entity_types=entity_types)
         return [
-            {"type": e.entity_type, "value": e.value, "confidence": e.confidence}
+            {"type": e.entity_type, "value": e.value, "score": e.score}
             for e in result.entities
         ]
 
     def memory_entities(self, memory_id: str) -> list[dict[str, Any]]:
         """Get entities linked to a memory."""
-        result = self._client.memory_entities(self._agent_id, memory_id=memory_id)
+        result = self._client.memory_entities(memory_id)
         return [
-            {"type": e.entity_type, "value": e.value, "confidence": e.confidence}
+            {"type": e.entity_type, "value": e.value, "score": e.score}
             for e in result.entities
         ]
 
