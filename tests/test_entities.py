@@ -32,7 +32,9 @@ def test_extract_returns_entities(extractor):
     result = ext.extract("Alice went to the store")
     assert len(result) == 1
     assert result[0] == {"type": "PERSON", "value": "Alice", "score": 0.95}
-    mock_client.extract_entities.assert_called_once_with("Alice went to the store", entity_types=None)
+    mock_client.extract_entities.assert_called_once_with(
+        "Alice went to the store", entity_types=None
+    )
 
 
 def test_extract_with_type_filter(extractor):
