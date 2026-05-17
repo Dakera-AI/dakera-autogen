@@ -26,7 +26,10 @@ class DakeraKnowledgeGraph:
             self._agent_id, root_id=root_id, edge_type=edge_type, max_depth=max_depth, limit=limit
         )
         return {
-            "edges": [{"source": e.source_id, "target": e.target_id, "type": e.edge_type} for e in result.edges],
+            "edges": [
+                {"source": e.source_id, "target": e.target_id, "type": e.edge_type}
+                for e in result.edges
+            ],
             "node_count": result.node_count,
             "edge_count": result.edge_count,
         }
@@ -44,7 +47,10 @@ class DakeraKnowledgeGraph:
         """Export the full knowledge graph."""
         result = self._client.knowledge_export(self._agent_id)
         return {
-            "edges": [{"source": e.source_id, "target": e.target_id, "type": e.edge_type} for e in result.edges],
+            "edges": [
+                {"source": e.source_id, "target": e.target_id, "type": e.edge_type}
+                for e in result.edges
+            ],
             "node_count": result.node_count,
             "edge_count": result.edge_count,
         }
