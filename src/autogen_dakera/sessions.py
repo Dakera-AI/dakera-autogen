@@ -58,7 +58,7 @@ class DakeraSessionManager:
             for s in sessions
         ]
 
-    def memories(self, session_id: str) -> list[dict[str, Any]]:
+    def memories(self, session_id: str) -> list[dict[str, Any]]:  # type: ignore[valid-type]
         """Get all memories from a session."""
         mems = self._client.session_memories(session_id)
         return [
