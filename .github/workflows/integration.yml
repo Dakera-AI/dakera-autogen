@@ -31,6 +31,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
         env:
           DAKERA_AUTH_ENABLED: "false"
+          DAKERA_ROOT_API_KEY: test-key
           DAKERA_HOST: "0.0.0.0"
           DAKERA_PORT: "3300"
         ports:

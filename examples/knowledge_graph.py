@@ -31,5 +31,8 @@ for edge in results["edges"][:5]:
     print(f"  {edge}")
 
 print("\n--- Summarize ---")
-summary = kg.summarize()
-print(f"Summary: {summary}")
+try:
+    summary = kg.summarize()
+    print(f"Summary: {summary}")
+except Exception as e:
+    print(f"Summarize not supported on this server version: {e}")

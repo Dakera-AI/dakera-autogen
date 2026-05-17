@@ -7,16 +7,15 @@ Usage:
 
 import os
 
-from autogen_dakera.memory import DakeraAutogenMemory
+from autogen_dakera import DakeraMemory
 
 api_url = os.environ.get("DAKERA_API_URL", "http://localhost:3300")
 api_key = os.environ.get("DAKERA_API_KEY", "")
 
-store = DakeraAutogenMemory(
+store = DakeraMemory(
     api_url=api_url,
     api_key=api_key,
     agent_id="autogen-hybrid-demo",
-    namespace="docs",
 )
 
 documents = [
@@ -28,14 +27,15 @@ documents = [
 ]
 
 print("Indexing documents...")
-store.add_texts(documents)
+for doc in documents:
+    store.add(doc)
 
 print("\n--- Vector search ---")
-results = store.search("memory safe language", top_k=3)
+results = store.query("memory safe language", top_k=3)
 for r in results:
     print(f"  [{r['score']:.3f}] {r['content'][:60]}")
 
 print("\n--- Hybrid search ---")
-results = store.hybrid_search("Python web", top_k=3, alpha=0.5)
+results = store.hybrid_search("Python web", top_k=3)
 for r in results:
     print(f"  [{r['score']:.3f}] {r['content'][:60]}")
