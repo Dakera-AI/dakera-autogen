@@ -120,6 +120,7 @@ jobs:
       - name: Run examples
         env:
           DAKERA_API_URL: http://localhost:3300
+          DAKERA_API_KEY: test-key
         run: |
           python examples/basic_memory.py
           python examples/advanced_memory.py
