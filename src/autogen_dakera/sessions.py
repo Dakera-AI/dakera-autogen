@@ -47,7 +47,10 @@ class DakeraSessionManager:
 
     def list(self, active_only: bool = False) -> list[dict[str, Any]]:
         """List sessions."""
-        sessions = self._client.list_sessions(self._agent_id, active_only=active_only)
+        result: Any = self._client.list_sessions(self._agent_id, active_only=active_only)
+        # The server answers ``{"sessions": [...], "total": n}``; dakera 0.13.0
+        # passes that object through, so take the list out of it.
+        sessions = result.get("sessions", []) if isinstance(result, dict) else result
         return [
             {
                 "id": s.get("id", ""),

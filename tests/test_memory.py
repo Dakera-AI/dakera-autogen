@@ -1,8 +1,9 @@
 """Tests for DakeraMemory (AutoGen integration)."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
+from dakera import DakeraClient
 
 from autogen_dakera import DakeraMemory
 
@@ -10,7 +11,7 @@ from autogen_dakera import DakeraMemory
 @pytest.fixture
 def memory():
     with patch("autogen_dakera.memory.DakeraClient") as MockClient:
-        mock_client = MagicMock()
+        mock_client = create_autospec(DakeraClient, instance=True)
         MockClient.return_value = mock_client
         m = DakeraMemory(api_url="http://localhost:3000", api_key="test-key",
                          agent_id="agent-1", recall_k=3)
@@ -53,3 +54,14 @@ def test_clear_is_noop(memory):
     m, mock_client = memory
     m.clear()
     mock_client.forget.assert_not_called()
+
+
+def test_query_forwards_tags(memory):
+    # recall() takes tags since dakera 0.13.1 (it raised TypeError before).
+    from dakera.models import RecallResponse
+
+    obj, mock_client = memory
+    mock_client.recall.return_value = RecallResponse.from_dict({"memories": []})
+    assert obj.query("q", tags=["work"]) == []
+    _, kwargs = mock_client.recall.call_args
+    assert kwargs["tags"] == ["work"]

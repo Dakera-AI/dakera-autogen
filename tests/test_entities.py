@@ -1,8 +1,9 @@
 """Tests for DakeraEntityExtractor (AutoGen integration)."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
+from dakera import DakeraClient
 
 from autogen_dakera.entities import DakeraEntityExtractor
 
@@ -10,7 +11,7 @@ from autogen_dakera.entities import DakeraEntityExtractor
 @pytest.fixture
 def extractor():
     with patch("autogen_dakera.entities.DakeraClient") as MC:
-        mock_client = MagicMock()
+        mock_client = create_autospec(DakeraClient, instance=True)
         MC.return_value = mock_client
         ext = DakeraEntityExtractor(
             api_url="http://localhost:3000", agent_id="test-agent", api_key="test"
@@ -76,5 +77,13 @@ def test_configure_calls_client(extractor):
     ext, mock_client = extractor
     ext.configure(entity_types=["PERSON", "ORG"])
     mock_client.configure_namespace_ner.assert_called_once_with(
-        "test-agent", entity_types=["PERSON", "ORG"]
+        "_dakera_agent_test-agent", extract_entities=True, entity_types=["PERSON", "ORG"]
+    )
+
+
+def test_configure_can_disable_extraction(extractor):
+    ext, mock_client = extractor
+    ext.configure(extract_entities=False)
+    mock_client.configure_namespace_ner.assert_called_once_with(
+        "_dakera_agent_test-agent", extract_entities=False, entity_types=None
     )

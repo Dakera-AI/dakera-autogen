@@ -1,8 +1,10 @@
 """Tests for DakeraKnowledgeGraph (AutoGen integration)."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
+from dakera import DakeraClient
+from dakera.models import GraphLinkResponse
 
 from autogen_dakera.knowledge_graph import DakeraKnowledgeGraph
 
@@ -10,7 +12,7 @@ from autogen_dakera.knowledge_graph import DakeraKnowledgeGraph
 @pytest.fixture
 def kg():
     with patch("autogen_dakera.knowledge_graph.DakeraClient") as MC:
-        mock_client = MagicMock()
+        mock_client = create_autospec(DakeraClient, instance=True)
         MC.return_value = mock_client
         graph = DakeraKnowledgeGraph(
             api_url="http://localhost:3000", agent_id="test-agent", api_key="test"
@@ -62,17 +64,28 @@ def test_find_path(kg):
     assert result == {"path": ["a", "c", "b"], "hop_count": 2}
 
 
-def test_link_memories(kg):
+def test_link_memories_passes_the_agent(kg):
     graph, mock_client = kg
-    graph.link("mem_1", "mem_2", edge_type="causes")
-    mock_client.memory_link.assert_called_once_with("mem_1", "mem_2", edge_type="causes")
+    mock_client.memory_link.return_value = GraphLinkResponse.from_dict(
+        {"from_id": "mem_1", "to_id": "mem_2", "edge_type": "linked_by"}
+    )
+    result = graph.link("mem_1", "mem_2", label="causes")
+    # POST /v1/memories/{id}/links needs agent_id (a 422 without it).
+    mock_client.memory_link.assert_called_once_with(
+        "mem_1", "mem_2", agent_id="test-agent", label="causes"
+    )
+    assert result == {"from_id": "mem_1", "to_id": "mem_2", "edge_type": "linked_by"}
 
 
-def test_link_default_edge_type(kg):
+def test_link_without_label(kg):
     graph, mock_client = kg
+    mock_client.memory_link.return_value = GraphLinkResponse.from_dict(
+        {"from_id": "mem_1", "to_id": "mem_2", "edge_type": "linked_by"}
+    )
     graph.link("mem_1", "mem_2")
-    mock_client.memory_link.assert_called_once_with("mem_1", "mem_2", edge_type="linked_by")
-
+    mock_client.memory_link.assert_called_once_with(
+        "mem_1", "mem_2", agent_id="test-agent", label=None
+    )
 
 def test_export(kg):
     graph, mock_client = kg
@@ -101,9 +114,19 @@ def test_build(kg):
 
 def test_summarize(kg):
     graph, mock_client = kg
-    mock_client.summarize.return_value = {"summary": "3 clusters"}
-    result = graph.summarize()
-    assert result == {"summary": "3 clusters"}
+    mock_client.summarize.return_value = {"summary_memory": {"id": "m3"}, "source_count": 2}
+    result = graph.summarize(["m1", "m2"])
+    assert result == {"summary_memory": {"id": "m3"}, "source_count": 2}
+    mock_client.summarize.assert_called_once_with(
+        "test-agent", memory_ids=["m1", "m2"], target_type=None
+    )
+
+
+def test_summarize_needs_two_memories(kg):
+    graph, mock_client = kg
+    with pytest.raises(ValueError):
+        graph.summarize(["m1"])
+    mock_client.summarize.assert_not_called()
 
 
 def test_deduplicate(kg):
@@ -111,3 +134,15 @@ def test_deduplicate(kg):
     mock_client.deduplicate.return_value = {"merged": 2}
     result = graph.deduplicate()
     assert result == {"merged": 2}
+
+def test_summarize_has_no_dry_run(kg):
+    graph, _ = kg
+    # The server always stores the summary; a dry run cannot be honoured.
+    with pytest.raises(TypeError):
+        graph.summarize(["m1", "m2"], dry_run=True)  # type: ignore[call-arg]
+
+
+def test_build_needs_a_seed_memory(kg):
+    graph, _ = kg
+    with pytest.raises(TypeError):
+        graph.build()  # type: ignore[call-arg]

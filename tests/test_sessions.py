@@ -1,8 +1,9 @@
 """Tests for DakeraSessionManager (AutoGen integration)."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import create_autospec, patch
 
 import pytest
+from dakera import DakeraClient
 
 from autogen_dakera.sessions import DakeraSessionManager
 
@@ -10,7 +11,7 @@ from autogen_dakera.sessions import DakeraSessionManager
 @pytest.fixture
 def session_mgr():
     with patch("autogen_dakera.sessions.DakeraClient") as MC:
-        mock_client = MagicMock()
+        mock_client = create_autospec(DakeraClient, instance=True)
         MC.return_value = mock_client
         mgr = DakeraSessionManager(
             api_url="http://localhost:3000", agent_id="test-agent", api_key="test"
@@ -70,6 +71,17 @@ def test_list_sessions(session_mgr):
     assert result[0]["id"] == "s1"
     mock_client.list_sessions.assert_called_once_with("test-agent", active_only=True)
 
+
+
+def test_list_sessions_reads_server_envelope(session_mgr):
+    mgr, mock_client = session_mgr
+    mock_client.list_sessions.return_value = {
+        "sessions": [{"id": "s1", "started_at": 100, "memory_count": 2}],
+        "total": 1,
+    }
+    result = mgr.list()
+    assert result == [{"id": "s1", "started_at": 100, "ended_at": None, "memory_count": 2}]
+    mock_client.list_sessions.assert_called_once_with("test-agent", active_only=False)
 
 def test_memories_returns_formatted(session_mgr):
     mgr, mock_client = session_mgr

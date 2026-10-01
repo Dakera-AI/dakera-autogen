@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autogen-dakera"
-version = "0.2.0"
+version = "0.3.0"
 description = "AutoGen integration for the Dakera AI memory platform"
 readme = "README.md"
 license = {text = "MIT"}
@@ -23,7 +23,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 keywords = ["autogen", "dakera", "memory", "ai", "agents"]
-dependencies = ["dakera>=0.9.0"]
+dependencies = ["dakera>=0.13.1"]
 
 [project.optional-dependencies]
 autogen = ["autogen-agentchat>=0.4.0"]
