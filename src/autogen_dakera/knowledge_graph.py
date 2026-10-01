@@ -39,9 +39,22 @@ class DakeraKnowledgeGraph:
         result = self._client.knowledge_path(self._agent_id, from_id=from_id, to_id=to_id)
         return {"path": result.path, "hop_count": result.hop_count}
 
-    def link(self, source_id: str, target_id: str, edge_type: str = "linked_by") -> None:
-        """Link two memories in the knowledge graph."""
-        self._client.memory_link(source_id, target_id, edge_type=edge_type)
+    def link(
+        self, source_id: str, target_id: str, *, label: str | None = None
+    ) -> dict[str, Any]:
+        """Link two of this agent's memories (``POST /v1/memories/{id}/links``).
+
+        The server records every explicit link as ``linked_by``; ``label`` is
+        an optional human-readable note stored with it.
+        """
+        result = self._client.memory_link(
+            source_id, target_id, agent_id=self._agent_id, label=label
+        )
+        return {
+            "from_id": result.from_id,
+            "to_id": result.to_id,
+            "edge_type": result.edge_type,
+        }
 
     def export(self) -> dict[str, Any]:
         """Export the full knowledge graph."""
@@ -56,17 +69,23 @@ class DakeraKnowledgeGraph:
         }
 
     def build(self, memory_id: str, depth: int | None = None) -> dict[str, Any]:
-        """Build the knowledge graph around one memory (the server needs ``memory_id``)."""
+        """Build the knowledge graph around one seed memory.
+
+        ``POST /v1/knowledge/graph`` needs ``memory_id``.
+        """
         return self._client.knowledge_graph(self._agent_id, memory_id=memory_id, depth=depth)
 
-    def summarize(self, memory_ids: list[str], target_type: str | None = None) -> dict[str, Any]:
-        """Summarize memories into one new memory.
+    def summarize(
+        self, memory_ids: list[str], *, target_type: str | None = None
+    ) -> dict[str, Any]:
+        """Summarize the given memories into one new summary memory.
 
-        The server needs the ids of the memories to summarize (at least two);
-        it answers with ``summary_memory`` and ``source_count``.
+        ``POST /v1/knowledge/summarize`` needs at least two ``memory_ids`` and
+        always stores the summary (the server has no dry run); it answers
+        ``{"summary_memory", "source_count"}``.
         """
         if len(memory_ids) < 2:
-            raise ValueError("summarize needs at least two memory ids")
+            raise ValueError("summarize() needs at least two memory ids")
         return self._client.summarize(
             self._agent_id, memory_ids=memory_ids, target_type=target_type
         )

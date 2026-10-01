@@ -88,7 +88,7 @@ pip install "autogen-dakera[autogen]"
 
 **Requirements:** Python ≥ 3.10, a running Dakera server (see Step 1 above)
 
-**Compatibility:** Compatible with Dakera server v0.12.0 and v0.11.108 (dakera Python SDK >= 0.13.0).
+**Compatibility:** Compatible with Dakera server v0.12.0 and v0.11.108 (dakera Python SDK >= 0.13.1).
 
 ---
 

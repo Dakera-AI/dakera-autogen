@@ -2,11 +2,11 @@
 
 ## [0.3.0] - 2026-10-01
 
-Dakera server **v0.12.0** support. Requires the `dakera` Python SDK **>= 0.13.0**; compatible
+Dakera server **v0.12.0** support. Requires the `dakera` Python SDK **>= 0.13.1**; compatible
 with Dakera server v0.12.0 and v0.11.108.
 
 ### Changed
-- Requires `dakera>=0.13.0` (was `>=0.9.0`).
+- Requires `dakera>=0.13.1` (was `>=0.9.0`).
 - `DakeraEntityExtractor.configure(entity_types=None, *, extract_entities=True)` configures the
   agent's memory namespace (`_dakera_agent_{agent_id}`), the namespace whose settings apply when
   memories are stored. It previously targeted a namespace named after the agent id (a 404 on the
@@ -14,9 +14,15 @@ with Dakera server v0.12.0 and v0.11.108.
 - `DakeraNamespaceManager.configure(name, *, dimension, distance=None)`: `dimension` is required
   by the server and is now an explicit argument (the old `**kwargs` pass-through could not work
   without it).
-- `DakeraKnowledgeGraph.summarize(memory_ids, target_type=None)` takes the ids of the memories to
-  summarize (at least two, as the server requires); without them every call was a 422.
-- `DakeraKnowledgeGraph.build(memory_id, depth=None)`: `memory_id` is required by the server.
+- `DakeraKnowledgeGraph.link(source_id, target_id, *, label=None)` sends the agent id the server
+  requires (every link was a 422 before) and returns the server's `{from_id, to_id, edge_type}`.
+  The `edge_type` argument is gone: the server records every explicit link as `linked_by`.
+- `DakeraKnowledgeGraph.summarize(memory_ids, *, target_type=None)` needs at least two ids and has
+  no `dry_run`: the server has no dry run and always stores the summary (dakera 0.13.1 raises on
+  `dry_run=True` rather than silently writing).
+- `DakeraKnowledgeGraph.build(memory_id, depth=None)`: the seed `memory_id` is required by the server.
+- `DakeraMemory.query(tags=...)` works: dakera 0.13.1 `recall()` accepts `tags` (it raised
+  `TypeError` before).
 
 ### Fixed
 - `DakeraSessionManager.list()` reads the server's `{"sessions": [...]}` answer (it iterated over

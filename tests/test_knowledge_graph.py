@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
 from dakera import DakeraClient
+from dakera.models import GraphLinkResponse
 
 from autogen_dakera.knowledge_graph import DakeraKnowledgeGraph
 
@@ -63,17 +64,28 @@ def test_find_path(kg):
     assert result == {"path": ["a", "c", "b"], "hop_count": 2}
 
 
-def test_link_memories(kg):
+def test_link_memories_passes_the_agent(kg):
     graph, mock_client = kg
-    graph.link("mem_1", "mem_2", edge_type="causes")
-    mock_client.memory_link.assert_called_once_with("mem_1", "mem_2", edge_type="causes")
+    mock_client.memory_link.return_value = GraphLinkResponse.from_dict(
+        {"from_id": "mem_1", "to_id": "mem_2", "edge_type": "linked_by"}
+    )
+    result = graph.link("mem_1", "mem_2", label="causes")
+    # POST /v1/memories/{id}/links needs agent_id (a 422 without it).
+    mock_client.memory_link.assert_called_once_with(
+        "mem_1", "mem_2", agent_id="test-agent", label="causes"
+    )
+    assert result == {"from_id": "mem_1", "to_id": "mem_2", "edge_type": "linked_by"}
 
 
-def test_link_default_edge_type(kg):
+def test_link_without_label(kg):
     graph, mock_client = kg
+    mock_client.memory_link.return_value = GraphLinkResponse.from_dict(
+        {"from_id": "mem_1", "to_id": "mem_2", "edge_type": "linked_by"}
+    )
     graph.link("mem_1", "mem_2")
-    mock_client.memory_link.assert_called_once_with("mem_1", "mem_2", edge_type="linked_by")
-
+    mock_client.memory_link.assert_called_once_with(
+        "mem_1", "mem_2", agent_id="test-agent", label=None
+    )
 
 def test_export(kg):
     graph, mock_client = kg
@@ -122,3 +134,15 @@ def test_deduplicate(kg):
     mock_client.deduplicate.return_value = {"merged": 2}
     result = graph.deduplicate()
     assert result == {"merged": 2}
+
+def test_summarize_has_no_dry_run(kg):
+    graph, _ = kg
+    # The server always stores the summary; a dry run cannot be honoured.
+    with pytest.raises(TypeError):
+        graph.summarize(["m1", "m2"], dry_run=True)  # type: ignore[call-arg]
+
+
+def test_build_needs_a_seed_memory(kg):
+    graph, _ = kg
+    with pytest.raises(TypeError):
+        graph.build()  # type: ignore[call-arg]
