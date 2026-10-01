@@ -55,13 +55,21 @@ class DakeraKnowledgeGraph:
             "edge_count": result.edge_count,
         }
 
-    def build(self, memory_id: str | None = None, depth: int | None = None) -> dict[str, Any]:
-        """Build/rebuild the knowledge graph from memories."""
+    def build(self, memory_id: str, depth: int | None = None) -> dict[str, Any]:
+        """Build the knowledge graph around one memory (the server needs ``memory_id``)."""
         return self._client.knowledge_graph(self._agent_id, memory_id=memory_id, depth=depth)
 
-    def summarize(self) -> dict[str, Any]:
-        """Summarize the knowledge graph."""
-        return self._client.summarize(self._agent_id)
+    def summarize(self, memory_ids: list[str], target_type: str | None = None) -> dict[str, Any]:
+        """Summarize memories into one new memory.
+
+        The server needs the ids of the memories to summarize (at least two);
+        it answers with ``summary_memory`` and ``source_count``.
+        """
+        if len(memory_ids) < 2:
+            raise ValueError("summarize needs at least two memory ids")
+        return self._client.summarize(
+            self._agent_id, memory_ids=memory_ids, target_type=target_type
+        )
 
     def deduplicate(self) -> dict[str, Any]:
         """Deduplicate entities in the graph."""

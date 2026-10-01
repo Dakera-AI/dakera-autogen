@@ -1,8 +1,10 @@
 """Tests for DakeraNamespaceManager (AutoGen integration)."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
+from dakera import DakeraClient
+from dakera.models import DistanceMetric
 
 from autogen_dakera.namespaces import DakeraNamespaceManager
 
@@ -10,7 +12,7 @@ from autogen_dakera.namespaces import DakeraNamespaceManager
 @pytest.fixture
 def ns_mgr():
     with patch("autogen_dakera.namespaces.DakeraClient") as MC:
-        mock_client = MagicMock()
+        mock_client = create_autospec(DakeraClient, instance=True)
         MC.return_value = mock_client
         mgr = DakeraNamespaceManager(api_url="http://localhost:3000", api_key="test")
         mgr._client = mock_client
@@ -79,8 +81,16 @@ def test_list_namespaces(ns_mgr):
 
 def test_configure_namespace(ns_mgr):
     mgr, mock_client = ns_mgr
-    mgr.configure("my-ns", distance="cosine")
-    mock_client.configure_namespace.assert_called_once_with("my-ns", distance="cosine")
+    mgr.configure("my-ns", dimension=384, distance="cosine")
+    mock_client.configure_namespace.assert_called_once_with(
+        "my-ns", dimension=384, distance=DistanceMetric.COSINE
+    )
+
+
+def test_configure_namespace_default_distance(ns_mgr):
+    mgr, mock_client = ns_mgr
+    mgr.configure("my-ns", dimension=768)
+    mock_client.configure_namespace.assert_called_once_with("my-ns", dimension=768, distance=None)
 
 
 def test_delete_namespace(ns_mgr):

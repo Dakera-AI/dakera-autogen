@@ -30,6 +30,17 @@ class DakeraEntityExtractor:
             for e in result.entities
         ]
 
-    def configure(self, entity_types: list[str] | None = None, **kwargs: Any) -> None:
-        """Configure entity extraction settings."""
-        self._client.configure_namespace_ner(self._agent_id, entity_types=entity_types, **kwargs)
+    def configure(
+        self, entity_types: list[str] | None = None, *, extract_entities: bool = True
+    ) -> None:
+        """Configure entity extraction on this agent's memory namespace.
+
+        The agent's memories live in ``_dakera_agent_{agent_id}``; that is the
+        namespace whose extraction settings apply when memories are stored.
+        ``entity_types=None`` keeps the configured types.
+        """
+        self._client.configure_namespace_ner(
+            f"_dakera_agent_{self._agent_id}",
+            extract_entities=extract_entities,
+            entity_types=entity_types,
+        )

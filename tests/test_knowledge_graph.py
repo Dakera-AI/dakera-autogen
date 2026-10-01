@@ -1,8 +1,9 @@
 """Tests for DakeraKnowledgeGraph (AutoGen integration)."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
+from dakera import DakeraClient
 
 from autogen_dakera.knowledge_graph import DakeraKnowledgeGraph
 
@@ -10,7 +11,7 @@ from autogen_dakera.knowledge_graph import DakeraKnowledgeGraph
 @pytest.fixture
 def kg():
     with patch("autogen_dakera.knowledge_graph.DakeraClient") as MC:
-        mock_client = MagicMock()
+        mock_client = create_autospec(DakeraClient, instance=True)
         MC.return_value = mock_client
         graph = DakeraKnowledgeGraph(
             api_url="http://localhost:3000", agent_id="test-agent", api_key="test"
@@ -101,9 +102,19 @@ def test_build(kg):
 
 def test_summarize(kg):
     graph, mock_client = kg
-    mock_client.summarize.return_value = {"summary": "3 clusters"}
-    result = graph.summarize()
-    assert result == {"summary": "3 clusters"}
+    mock_client.summarize.return_value = {"summary_memory": {"id": "m3"}, "source_count": 2}
+    result = graph.summarize(["m1", "m2"])
+    assert result == {"summary_memory": {"id": "m3"}, "source_count": 2}
+    mock_client.summarize.assert_called_once_with(
+        "test-agent", memory_ids=["m1", "m2"], target_type=None
+    )
+
+
+def test_summarize_needs_two_memories(kg):
+    graph, mock_client = kg
+    with pytest.raises(ValueError):
+        graph.summarize(["m1"])
+    mock_client.summarize.assert_not_called()
 
 
 def test_deduplicate(kg):

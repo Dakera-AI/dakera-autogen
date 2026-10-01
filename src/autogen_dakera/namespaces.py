@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from dakera import DakeraClient
+from dakera.models import DistanceMetric
 
 
 class DakeraNamespaceManager:
@@ -50,9 +51,17 @@ class DakeraNamespaceManager:
             for ns in namespaces
         ]
 
-    def configure(self, name: str, **kwargs: Any) -> None:
-        """Update namespace configuration."""
-        self._client.configure_namespace(name, **kwargs)
+    def configure(self, name: str, *, dimension: int, distance: str | None = None) -> None:
+        """Create or update a namespace's vector configuration.
+
+        ``dimension`` is required by the server; ``distance`` is ``cosine``,
+        ``euclidean`` or ``dot_product`` (server default: cosine).
+        """
+        self._client.configure_namespace(
+            name,
+            dimension=dimension,
+            distance=DistanceMetric(distance) if distance is not None else None,
+        )
 
     def delete(self, name: str) -> None:
         """Delete a namespace."""

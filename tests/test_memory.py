@@ -1,8 +1,9 @@
 """Tests for DakeraMemory (AutoGen integration)."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
+from dakera import DakeraClient
 
 from autogen_dakera import DakeraMemory
 
@@ -10,7 +11,7 @@ from autogen_dakera import DakeraMemory
 @pytest.fixture
 def memory():
     with patch("autogen_dakera.memory.DakeraClient") as MockClient:
-        mock_client = MagicMock()
+        mock_client = create_autospec(DakeraClient, instance=True)
         MockClient.return_value = mock_client
         m = DakeraMemory(api_url="http://localhost:3000", api_key="test-key",
                          agent_id="agent-1", recall_k=3)

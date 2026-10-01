@@ -1,6 +1,6 @@
 """Knowledge graph operations with AutoGen and Dakera.
 
-Demonstrates graph querying, traversal, and export.
+Demonstrates graph querying, export and summarizing memories.
 
 Usage:
     export DAKERA_API_URL="http://localhost:3300"
@@ -10,6 +10,7 @@ Usage:
 import os
 
 from autogen_dakera.knowledge_graph import DakeraKnowledgeGraph
+from autogen_dakera.memory import DakeraMemory
 
 api_url = os.environ.get("DAKERA_API_URL", "http://localhost:3300")
 api_key = os.environ.get("DAKERA_API_KEY", "")
@@ -31,5 +32,11 @@ for edge in results["edges"][:5]:
     print(f"  {edge}")
 
 print("\n--- Summarize ---")
-summary = kg.summarize()
-print(f"Summary: {summary}")
+# Summarize needs the ids of at least two memories of this agent.
+store = DakeraMemory(api_url=api_url, api_key=api_key, agent_id="autogen-kg-demo")
+ids = [
+    store.add("Anna leads the platform team in Berlin")["id"],
+    store.add("Anna's platform team ships the Berlin release every Friday")["id"],
+]
+summary = kg.summarize(ids)
+print(f"Summary of {summary['source_count']} memories: {summary['summary_memory']['content']}")
