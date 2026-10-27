@@ -39,9 +39,7 @@ class DakeraKnowledgeGraph:
         result = self._client.knowledge_path(self._agent_id, from_id=from_id, to_id=to_id)
         return {"path": result.path, "hop_count": result.hop_count}
 
-    def link(
-        self, source_id: str, target_id: str, *, label: str | None = None
-    ) -> dict[str, Any]:
+    def link(self, source_id: str, target_id: str, *, label: str | None = None) -> dict[str, Any]:
         """Link two of this agent's memories (``POST /v1/memories/{id}/links``).
 
         The server records every explicit link as ``linked_by``; ``label`` is
@@ -75,9 +73,7 @@ class DakeraKnowledgeGraph:
         """
         return self._client.knowledge_graph(self._agent_id, memory_id=memory_id, depth=depth)
 
-    def summarize(
-        self, memory_ids: list[str], *, target_type: str | None = None
-    ) -> dict[str, Any]:
+    def summarize(self, memory_ids: list[str], *, target_type: str | None = None) -> dict[str, Any]:
         """Summarize the given memories into one new summary memory.
 
         ``POST /v1/knowledge/summarize`` needs at least two ``memory_ids`` and

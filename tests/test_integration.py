@@ -13,6 +13,7 @@ import uuid
 import pytest
 
 from autogen_dakera import (
+    DakeraAutoGenMemory,
     DakeraEntityExtractor,
     DakeraKnowledgeGraph,
     DakeraMemory,
@@ -73,8 +74,12 @@ def test_sessions(agent_id: str) -> None:
         sid = sessions.active_session_id
         assert sid is not None
         assert sessions.touch()["session_state"] == "active"
-        stored = memory.add("User asked about password reset", session_id=sid)
+        stored = memory.add(
+            "User asked about password reset. The reset link had expired, so we sent a new one.",
+            session_id=sid,
+        )
         assert stored["session_state"] == "active"
+        # The server also lists the sentences it derives; memories() leaves them out.
         assert [m["id"] for m in sessions.memories(sid)] == [stored["id"]]
         assert sid in [s["id"] for s in sessions.list(active_only=True)]
     assert sessions.active_session_id is None
@@ -123,3 +128,39 @@ def test_namespaces() -> None:
         assert namespaces.stats(name)["dimensions"] == 8
     finally:
         namespaces.delete(name)
+
+
+async def test_autogen_memory_with_assistant_agent(agent_id: str) -> None:
+    from autogen_agentchat.agents import AssistantAgent
+    from autogen_core.memory import MemoryContent, MemoryMimeType
+    from autogen_ext.models.replay import ReplayChatCompletionClient
+
+    memory = DakeraAutoGenMemory(API_URL, agent_id, api_key=API_KEY or None, recall_k=2)
+    try:
+        assert (await memory.query("anything")).results == []
+        await memory.add(
+            MemoryContent(content="The user prefers metric units", mime_type=MemoryMimeType.TEXT)
+        )
+        await memory.add(
+            MemoryContent(content={"home": "Lyon"}, mime_type=MemoryMimeType.JSON),
+            event_time="2024-03-01T10:00:00Z",
+        )
+        await memory.add(MemoryContent(content="Paris is in France", mime_type="text/plain"))
+
+        result = await memory.query("Which units does the user prefer?")
+        assert 1 <= len(result.results) <= 2
+        assert result.results[0].content == "The user prefers metric units"
+        assert set(result.results[0].metadata or {}) >= {"id", "score", "importance"}
+        homes = [r for r in (await memory.query("Where is home?", top_k=3)).results]
+        assert {"home": "Lyon"} in [r.content for r in homes]
+
+        model_client = ReplayChatCompletionClient(["It is 20 degrees Celsius."])
+        agent = AssistantAgent("assistant", model_client=model_client, memory=[memory])
+        await agent.run(task="What is the weather? Use my preferred units.")
+        sent = [str(m.content) for m in model_client.create_calls[0]["messages"]]
+        assert any("1. The user prefers metric units" in m for m in sent)
+
+        await memory.clear()
+        assert (await memory.query("units")).results == []
+    finally:
+        await memory.close()

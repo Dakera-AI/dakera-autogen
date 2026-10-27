@@ -9,10 +9,21 @@ from dakera import DakeraClient
 
 
 class DakeraMemory:
-    """Persistent semantic memory for AutoGen agents backed by Dakera AI.
+    """Synchronous access to an agent's Dakera memories, for tools and scripts.
 
-    Supports memory types, tags, TTL, batch operations, hybrid search,
-    sessions, knowledge graph, and entity extraction.
+    Store memories with memory types, tags, TTL, sessions and event time; recall
+    them semantically with filters; search, consolidate and forget them. For the
+    memory of an AutoGen agent (``AssistantAgent(memory=[...])``) use
+    :class:`~autogen_dakera.DakeraAutoGenMemory`, which implements AutoGen's async
+    ``Memory`` interface.
+
+    Args:
+        api_url: Dakera server URL.
+        agent_id: The agent whose memories are read and written.
+        api_key: Dakera API key.
+        recall_k: Memories returned by :meth:`query` by default.
+        min_importance: Default minimum importance of recalled memories.
+        importance: Importance of memories stored by :meth:`add` by default.
     """
 
     def __init__(
@@ -76,8 +87,11 @@ class DakeraMemory:
     ) -> list[dict[str, Any]]:
         """Semantic recall with optional filtering.
 
-        Returns at most ``top_k`` ranked memories: the server's neighbourhood
-        context is requested separately and left out.
+        Returns at most ``top_k`` ranked memories, most relevant first, as dicts
+        with ``content``, ``id``, ``score`` (the server's ranking score),
+        ``importance`` and ``metadata``. The server's neighbourhood context is
+        requested separately and left out. ``tags`` matches memories carrying at
+        least one of the tags.
         """
         k = top_k if top_k is not None else self._recall_k
         min_imp = (
@@ -109,7 +123,7 @@ class DakeraMemory:
         query: str,
         top_k: int | None = None,
     ) -> list[dict[str, Any]]:
-        """Combined vector + BM25 search."""
+        """Combined vector + BM25 search; dicts with ``content``, ``id`` and ``score``."""
         k = top_k if top_k is not None else self._recall_k
         results = self._client.search_memories(self._agent_id, query=query, top_k=k)
         return [
@@ -156,11 +170,11 @@ class DakeraMemory:
         return self._client.consolidate(self._agent_id, memory_ids=memory_ids)
 
     def stats(self) -> dict[str, Any]:
-        """Get agent memory statistics."""
+        """Get the agent's memory statistics (``total_memories``, ...)."""
         return self._client.agent_stats(self._agent_id)
 
     def clear(self) -> None:
-        """No-op: Dakera memories are persistent by design."""
+        """No-op: Dakera memories are persistent by design (use :meth:`forget`)."""
 
     def __repr__(self) -> str:
         return (

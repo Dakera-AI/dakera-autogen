@@ -13,8 +13,9 @@ def memory():
     with patch("autogen_dakera.memory.DakeraClient") as MockClient:
         mock_client = create_autospec(DakeraClient, instance=True)
         MockClient.return_value = mock_client
-        m = DakeraMemory(api_url="http://localhost:3000", api_key="test-key",
-                         agent_id="agent-1", recall_k=3)
+        m = DakeraMemory(
+            api_url="http://localhost:3000", api_key="test-key", agent_id="agent-1", recall_k=3
+        )
         m._client = mock_client
         yield m, mock_client
 
@@ -23,8 +24,8 @@ def test_add_stores_memory(memory):
     m, mock_client = memory
     m.add("Project deadline is April 15")
     mock_client.store_memory.assert_called_once_with(
-        "agent-1", content="Project deadline is April 15",
-        memory_type="episodic", importance=0.7)
+        "agent-1", content="Project deadline is April 15", memory_type="episodic", importance=0.7
+    )
 
 
 def _recall(*memories, **extra):
@@ -51,7 +52,8 @@ def test_query_returns_memories(memory):
         }
     ]
     mock_client.recall.assert_called_once_with(
-        "agent-1", query="What is the deadline?", top_k=3, neighborhood_mode="separate")
+        "agent-1", query="What is the deadline?", top_k=3, neighborhood_mode="separate"
+    )
 
 
 def test_query_wraps_non_dict_results(memory):
@@ -90,21 +92,27 @@ def test_query_scores_by_rank_score(memory):
 def test_batch_query_caps_each_result_at_top_k(memory):
     m, mock_client = memory
     mock_client.recall.return_value = _recall(
-        _mem("m-1", "a", 0.9), _mem("n-1", "ctx", 0.5, retrieval="neighborhood"),
+        _mem("m-1", "a", 0.9),
+        _mem("n-1", "ctx", 0.5, retrieval="neighborhood"),
         _mem("m-2", "b", 0.8),
     )
     results = m.batch_query(["x", "y"], top_k=1)
     assert results == [[{"content": "a", "id": "m-1", "score": 0.9}]] * 2
-    mock_client.recall.assert_called_with("agent-1", query="y", top_k=1,
-                                          neighborhood_mode="separate")
+    mock_client.recall.assert_called_with(
+        "agent-1", query="y", top_k=1, neighborhood_mode="separate"
+    )
 
 
 def test_add_forwards_event_time(memory):
     m, mock_client = memory
     m.add("Met Anna in Berlin", event_time="2024-03-01T10:00:00Z")
     mock_client.store_memory.assert_called_once_with(
-        "agent-1", content="Met Anna in Berlin", memory_type="episodic", importance=0.7,
-        event_time="2024-03-01T10:00:00Z")
+        "agent-1",
+        content="Met Anna in Berlin",
+        memory_type="episodic",
+        importance=0.7,
+        event_time="2024-03-01T10:00:00Z",
+    )
 
 
 def test_consolidate_without_ids(memory):

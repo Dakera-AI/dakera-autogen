@@ -2,13 +2,27 @@
 
 from __future__ import annotations
 
+import builtins
 from typing import Any
 
 from dakera import DakeraClient
 
+# Tag of the sentence sub-memories the server derives from a stored memory.
+_DERIVED_TAG = "dakera-curated"
+
 
 class DakeraSessionManager:
-    """Manage conversation sessions for AutoGen agent memory grouping."""
+    """Group an agent's memories into conversation sessions.
+
+    Pass :attr:`active_session_id` as ``session_id`` when storing memories to
+    attach them to the session. Usable as a context manager: ``with sessions:``
+    starts a session and ends it on exit.
+
+    Args:
+        api_url: Dakera server URL.
+        agent_id: The agent the sessions belong to.
+        api_key: Dakera API key.
+    """
 
     def __init__(self, api_url: str, agent_id: str, api_key: str = "") -> None:
         self._client = DakeraClient(api_url, api_key=api_key)
@@ -17,6 +31,7 @@ class DakeraSessionManager:
 
     @property
     def active_session_id(self) -> str | None:
+        """The session started by :meth:`start` and not yet ended, if any."""
         return self._active_session_id
 
     def start(
@@ -60,7 +75,10 @@ class DakeraSessionManager:
         self._active_session_id = None
 
     def get(self, session_id: str) -> dict[str, Any]:
-        """Get session details."""
+        """Get a session's details.
+
+        ``ended_reason`` says why an ended session ended (``"client"``, ``"idle"``, ...).
+        """
         result = self._client.get_session(session_id)
         return {
             "id": result.get("id", session_id),
@@ -74,7 +92,7 @@ class DakeraSessionManager:
         }
 
     def list(self, active_only: bool = False) -> list[dict[str, Any]]:
-        """List sessions."""
+        """List the agent's sessions, optionally only those still active."""
         result: Any = self._client.list_sessions(self._agent_id, active_only=active_only)
         # The server answers ``{"sessions": [...], "total": n}``; the SDK
         # passes that object through, so take the list out of it.
@@ -85,13 +103,22 @@ class DakeraSessionManager:
                 "started_at": s.get("started_at"),
                 "ended_at": s.get("ended_at"),
                 "memory_count": s.get("memory_count", 0),
+                "ended_reason": s.get("ended_reason"),
             }
             for s in sessions
         ]
 
-    def memories(self, session_id: str) -> list[dict[str, Any]]:  # type: ignore[valid-type]
-        """Get all memories from a session."""
+    def memories(
+        self, session_id: str, *, include_derived: bool = False
+    ) -> builtins.list[dict[str, Any]]:
+        """Get the memories stored in a session, oldest first.
+
+        The server also lists the sentence sub-memories it derives from them
+        (tagged ``dakera-curated``); they are left out unless ``include_derived=True``.
+        """
         mems = self._client.session_memories(session_id)
+        if not include_derived:
+            mems = [m for m in mems if _DERIVED_TAG not in (m.get("tags") or [])]
         return [
             {
                 "id": m.get("id", ""),

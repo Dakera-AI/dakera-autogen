@@ -2,9 +2,9 @@
 
 ## [0.4.0] - 2026-10-27
 
-Dakera server **v0.12.3** support. Requires the `dakera` Python SDK **>= 0.14.1**; tested
-against Dakera server v0.12.3 and still works with v0.12.0 – v0.12.2 (the new arguments below
-need the server version named next to them).
+Dakera server **v0.12.3** support and a real AutoGen `Memory`. Requires the `dakera` Python
+SDK **>= 0.14.1**; tested against Dakera server v0.12.3 and still works with v0.12.0 – v0.12.2
+(the new arguments below need the server version named next to them).
 
 ### Changed
 - Requires `dakera>=0.14.1` (was `>=0.13.1`).
@@ -17,6 +17,17 @@ need the server version named next to them).
 - `DakeraMemory.query()` results carry the memory's `importance`.
 
 ### Added
+- **`DakeraAutoGenMemory`**, an implementation of AutoGen's `autogen_core.memory.Memory`, so a
+  Dakera agent's memories can be given to `AssistantAgent(memory=[...])`: `add()` stores a
+  `MemoryContent` (text, Markdown or JSON; images and binary raise `ValueError`), `query()`
+  returns at most `top_k` ranked memories as `MemoryContent` with `id` / `score` /
+  `importance` in their metadata, `update_context()` adds the memories relevant to the last
+  message as one system message, `clear()` deletes the agent's memories and `close()` closes
+  the connections. It is an AutoGen component (`DakeraAutoGenMemoryConfig`) that round-trips
+  through `dump_component()` / `load_component()`; the API key is never serialized and
+  defaults to `DAKERA_API_KEY`. Requests honour AutoGen's `CancellationToken`.
+- The `autogen` extra installs `autogen-core` / `autogen-agentchat` >= 0.4.3 (the first release
+  with `autogen_core.memory`) and the async `dakera` client (`dakera[async]`).
 - `DakeraMemory.add(..., event_time=)`: when the memory's event happened (Unix seconds, an RFC 3339
   string or a timezone-aware `datetime`) for history written after the fact. Server v0.12.3
   reads it for recency and `since` / `until`; `created_at` stays the ingest time.
@@ -25,11 +36,34 @@ need the server version named next to them).
   `DakeraSessionManager.touch()`: from v0.12.2 the server ends a session after 4 h without
   activity by default; set the session's own timeout (`0` = never) or keep it open.
   `DakeraSessionManager.get()` returns `ended_reason` (`"client"`, `"idle"`, ...) and
-  `last_activity_at`.
+  `last_activity_at`; `DakeraSessionManager.list()` returns `ended_reason`.
+- `DakeraSessionManager.memories(session_id, *, include_derived=False)`.
+- `examples/assistant_agent.py`: an `AssistantAgent` with `DakeraAutoGenMemory`; it uses
+  OpenAI when `OPENAI_API_KEY` is set and a replay model client otherwise.
+- `LICENSE` (MIT, as declared in `pyproject.toml`).
 
 ### Fixed
+- The README's headline example passed `DakeraMemory` to `AssistantAgent(memory=[...])`, but
+  `DakeraMemory` is not an AutoGen `Memory`, so the agent failed at its first model call
+  (`AttributeError: ... has no attribute 'update_context'`). The README now uses
+  `DakeraAutoGenMemory`, and every README snippet is run against a live server.
+- `DakeraSessionManager.memories()` returned the sentence sub-memories the server derives from
+  a session's memories (tagged `dakera-curated`) alongside them; they are left out unless
+  `include_derived=True`.
+- README: the `docker run` quick start published port 3300 while the server listens on 3000;
+  the Docker Compose URL pointed at a file that does not exist and set `DAKERA_API_KEY`
+  instead of the required `DAKERA_ROOT_API_KEY`; the configuration table named a `top_k`
+  constructor argument (it is `recall_k`).
 - The `advanced_memory.py` example printed `importance`, which `query()` did not return; it
   now queries something the stored memories answer and shows `event_time`.
+
+### Docs / examples
+- README rewritten around `DakeraAutoGenMemory`, with sections for `DakeraMemory`, sessions,
+  the knowledge graph and entities, and an examples table. CONTRIBUTING describes the current
+  commands and how to run the live tests (`DAKERA_API_URL`).
+- Examples default to `http://localhost:3000` (the server's default port), forget what they
+  store so reruns start clean, and cover tag filters, consolidation, links and paths,
+  `touch()` and the session context manager.
 
 ### Tests / CI
 - `tests/test_integration.py`: live tests of every class against a real server, skipped unless
@@ -37,6 +71,8 @@ need the server version named next to them).
 - Integration tests and examples run against `ghcr.io/dakera-ai/dakera:0.12.3`. That image ships
   no `curl`, so the service container has no in-container health check; the job polls
   `/health` from the runner instead.
+- CI installs the `autogen` extra, checks formatting (`ruff format --check`, the whole tree is
+  formatted), and a failing example now fails the examples job.
 
 ## [0.3.0] - 2026-10-01
 

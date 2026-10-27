@@ -32,10 +32,13 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,autogen]"
 
       - name: Lint with ruff
         run: ruff check .
+
+      - name: Check formatting
+        run: ruff format --check .
 
       - name: Type check with mypy
         run: mypy src/ --ignore-missing-imports
