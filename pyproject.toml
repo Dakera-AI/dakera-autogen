@@ -38,7 +38,9 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/dakera-ai/dakera-autogen"
-Documentation = "https://docs.dakera.ai/integrations/autogen"
+Documentation = "https://dakera.ai/integrations/autogen.html"
+Changelog = "https://github.com/Dakera-AI/dakera-autogen/blob/main/CHANGELOG.md"
+Issues = "https://github.com/Dakera-AI/dakera-autogen/issues"
 Repository = "https://github.com/dakera-ai/dakera-autogen"
 
 [tool.setuptools.packages.find]

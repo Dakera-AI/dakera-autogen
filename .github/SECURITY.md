@@ -38,6 +38,6 @@ This policy covers security vulnerabilities in this integration library, includi
 - Data serialization and deserialization
 - Network communication with the Dakera server
 
-For vulnerabilities in the Dakera server itself, see the [dakera](https://github.com/dakera-ai/dakera) repository.
-For the hosted Dakera service, use the same email address above.
+Vulnerabilities in the Dakera server itself are outside this policy's scope; report them
+privately through the advisory link above as well — do not open a public issue.
 
