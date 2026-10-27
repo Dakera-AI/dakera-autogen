@@ -86,6 +86,14 @@ class DakeraKnowledgeGraph:
             self._agent_id, memory_ids=memory_ids, target_type=target_type
         )
 
-    def deduplicate(self) -> dict[str, Any]:
-        """Deduplicate entities in the graph."""
-        return self._client.deduplicate(self._agent_id)
+    def deduplicate(
+        self, *, threshold: float | None = None, dry_run: bool = False
+    ) -> dict[str, Any]:
+        """Merge the agent's near-duplicate memories (``POST /v1/knowledge/deduplicate``).
+
+        ``threshold`` is the similarity above which two memories count as duplicates
+        (server default when ``None``); ``dry_run=True`` only reports them. From server
+        v0.12.3 merged-away memories can be restored for a while (the SDK's
+        ``list_deduplicated()`` / ``restore_deduplicated()``).
+        """
+        return self._client.deduplicate(self._agent_id, threshold=threshold, dry_run=dry_run)

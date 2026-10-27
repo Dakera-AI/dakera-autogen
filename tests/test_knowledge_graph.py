@@ -135,6 +135,14 @@ def test_deduplicate(kg):
     mock_client.deduplicate.return_value = {"merged": 2}
     result = graph.deduplicate()
     assert result == {"merged": 2}
+    mock_client.deduplicate.assert_called_once_with("test-agent", threshold=None, dry_run=False)
+
+
+def test_deduplicate_threshold_and_dry_run(kg):
+    graph, mock_client = kg
+    mock_client.deduplicate.return_value = {"duplicates_found": 1}
+    graph.deduplicate(threshold=0.9, dry_run=True)
+    mock_client.deduplicate.assert_called_once_with("test-agent", threshold=0.9, dry_run=True)
 
 
 def test_summarize_has_no_dry_run(kg):

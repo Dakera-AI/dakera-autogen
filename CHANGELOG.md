@@ -56,6 +56,11 @@ SDK **>= 0.14.1**; tested against Dakera server v0.12.3 and still works with v0.
   constructor argument (it is `recall_k`).
 - The `advanced_memory.py` example printed `importance`, which `query()` did not return; it
   now queries something the stored memories answer and shows `event_time`.
+- `DakeraNamespaceManager.create(..., metadata=...)` looked like it stored namespace metadata,
+  but the server's create route has no such field and dropped it; `metadata` is deprecated
+  (`DeprecationWarning`) and no longer sent.
+- `DakeraKnowledgeGraph.deduplicate()` merges the agent's near-duplicate memories (its
+  docstring said graph entities) and takes `threshold=` / `dry_run=`.
 
 ### Docs / examples
 - README rewritten around `DakeraAutoGenMemory`, with sections for `DakeraMemory`, sessions,
