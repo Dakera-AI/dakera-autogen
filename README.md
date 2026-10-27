@@ -88,7 +88,7 @@ pip install "autogen-dakera[autogen]"
 
 **Requirements:** Python ≥ 3.10, a running Dakera server (see Step 1 above)
 
-**Compatibility:** Compatible with Dakera server v0.12.0 and v0.11.108 (dakera Python SDK >= 0.13.1).
+**Compatibility:** Tested against Dakera server v0.12.3; works with v0.12.0 – v0.12.2 (dakera Python SDK >= 0.14.1). `event_time` needs server v0.12.3; `DakeraSessionManager.touch()` and `idle_timeout_secs` need v0.12.2.
 
 ---
 

@@ -19,12 +19,38 @@ class DakeraSessionManager:
     def active_session_id(self) -> str | None:
         return self._active_session_id
 
-    def start(self, metadata: dict[str, Any] | None = None) -> str:
-        """Start a new session. Returns session ID."""
-        result = self._client.start_session(self._agent_id, metadata=metadata)
+    def start(
+        self, metadata: dict[str, Any] | None = None, *, idle_timeout_secs: int | None = None
+    ) -> str:
+        """Start a new session. Returns session ID.
+
+        The server ends a session after a period without activity (default
+        4 h). ``idle_timeout_secs`` sets this session's own timeout (``0`` =
+        never); keep a long-lived session open with :meth:`touch`.
+        """
+        if idle_timeout_secs is None:
+            result = self._client.start_session(self._agent_id, metadata=metadata)
+        else:
+            result = self._client.start_session(
+                self._agent_id, metadata=metadata, idle_timeout_secs=idle_timeout_secs
+            )
         session_id: str = result["id"]
         self._active_session_id = session_id
         return session_id
+
+    def touch(self) -> dict[str, Any]:
+        """Record activity on the active session so it does not end for inactivity.
+
+        Returns ``{"session_state", "idle_deadline_at"}``; ``session_state`` is
+        ``"ended"`` when the server already ended the session.
+        """
+        if self._active_session_id is None:
+            raise RuntimeError("No active session to touch")
+        result = self._client.touch_session(self._active_session_id)
+        return {
+            "session_state": result.session_state,
+            "idle_deadline_at": result.idle_deadline_at,
+        }
 
     def end(self) -> None:
         """End the active session."""
@@ -43,12 +69,14 @@ class DakeraSessionManager:
             "ended_at": result.get("ended_at"),
             "metadata": result.get("metadata"),
             "memory_count": result.get("memory_count", 0),
+            "ended_reason": result.get("ended_reason"),
+            "last_activity_at": result.get("last_activity_at"),
         }
 
     def list(self, active_only: bool = False) -> list[dict[str, Any]]:
         """List sessions."""
         result: Any = self._client.list_sessions(self._agent_id, active_only=active_only)
-        # The server answers ``{"sessions": [...], "total": n}``; dakera 0.13.0
+        # The server answers ``{"sessions": [...], "total": n}``; the SDK
         # passes that object through, so take the list out of it.
         sessions = result.get("sessions", []) if isinstance(result, dict) else result
         return [

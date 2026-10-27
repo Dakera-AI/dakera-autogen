@@ -58,6 +58,47 @@ def test_get_session_returns_details(session_mgr):
     assert result["id"] == "sess_789"
     assert result["memory_count"] == 5
     assert result["metadata"] == {"k": "v"}
+    assert result["ended_reason"] is None
+
+
+def test_get_session_reports_idle_end(session_mgr):
+    mgr, mock_client = session_mgr
+    mock_client.get_session.return_value = {
+        "id": "sess_idle", "agent_id": "test-agent", "started_at": 1, "ended_at": 2,
+        "ended_reason": "idle", "last_activity_at": 1,
+    }
+    result = mgr.get("sess_idle")
+    assert result["ended_reason"] == "idle"
+    assert result["last_activity_at"] == 1
+
+
+def test_start_with_idle_timeout(session_mgr):
+    mgr, mock_client = session_mgr
+    mock_client.start_session.return_value = {"id": "sess_t"}
+    mgr.start(idle_timeout_secs=0)
+    mock_client.start_session.assert_called_once_with(
+        "test-agent", metadata=None, idle_timeout_secs=0
+    )
+
+
+def test_touch_active_session(session_mgr):
+    from dakera.models import SessionTouchResponse
+
+    mgr, mock_client = session_mgr
+    mock_client.start_session.return_value = {"id": "sess_t"}
+    mock_client.touch_session.return_value = SessionTouchResponse.from_dict(
+        {"session": {"id": "sess_t", "agent_id": "test-agent", "started_at": 1},
+         "session_state": "active", "idle_deadline_at": 100}
+    )
+    mgr.start()
+    assert mgr.touch() == {"session_state": "active", "idle_deadline_at": 100}
+    mock_client.touch_session.assert_called_once_with("sess_t")
+
+
+def test_touch_without_active_raises(session_mgr):
+    mgr, _ = session_mgr
+    with pytest.raises(RuntimeError, match="No active session"):
+        mgr.touch()
 
 
 def test_list_sessions(session_mgr):

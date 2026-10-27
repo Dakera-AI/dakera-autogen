@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.4.0] - 2026-10-27
+
+Dakera server **v0.12.3** support. Requires the `dakera` Python SDK **>= 0.14.1**; tested
+against Dakera server v0.12.3 and still works with v0.12.0 – v0.12.2 (the new arguments below
+need the server version named next to them).
+
+### Changed
+- Requires `dakera>=0.14.1` (was `>=0.13.1`).
+- `DakeraMemory.query()` and `DakeraMemory.batch_query()` return at most `top_k` ranked memories. A v0.12.3
+  server appends neighbourhood context to a recall by default, which could push the result
+  past `top_k` and mix in items whose scores are not comparable with the ranked ones; the
+  context is now requested separately (`neighborhood_mode="separate"`) and left out.
+- Result `score` is the server's `rank_score` (v0.12.3), the field recall ranks by; older
+  servers keep the previous score.
+- `DakeraMemory.query()` results carry the memory's `importance`.
+
+### Added
+- `DakeraMemory.add(..., event_time=)`: when the memory's event happened (Unix seconds, an RFC 3339
+  string or a timezone-aware `datetime`) for history written after the fact. Server v0.12.3
+  reads it for recency and `since` / `until`; `created_at` stays the ingest time.
+- `DakeraMemory.consolidate(memory_ids=None)`: merge exactly the given memories (at least two).
+- `DakeraSessionManager.start(metadata=None, *, idle_timeout_secs=None)` and
+  `DakeraSessionManager.touch()`: from v0.12.2 the server ends a session after 4 h without
+  activity by default; set the session's own timeout (`0` = never) or keep it open.
+  `DakeraSessionManager.get()` returns `ended_reason` (`"client"`, `"idle"`, ...) and
+  `last_activity_at`.
+
+### Fixed
+- The `advanced_memory.py` example printed `importance`, which `query()` did not return; it
+  now queries something the stored memories answer and shows `event_time`.
+
+### Tests / CI
+- `tests/test_integration.py`: live tests of every class against a real server, skipped unless
+  `DAKERA_API_URL` is set (the CI integration job sets it).
+- Integration tests and examples run against `ghcr.io/dakera-ai/dakera:0.12.3`. That image ships
+  no `curl`, so the service container has no in-container health check; the job polls
+  `/health` from the runner instead.
+
 ## [0.3.0] - 2026-10-01
 
 Dakera server **v0.12.0** support. Requires the `dakera` Python SDK **>= 0.13.1**; compatible
