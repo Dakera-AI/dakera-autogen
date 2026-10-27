@@ -43,6 +43,11 @@ SDK **>= 0.14.1**; tested against Dakera server v0.12.3 and still works with v0.
 - `LICENSE` (MIT, as declared in `pyproject.toml`).
 
 ### Fixed
+- `DakeraMemory.query()`, `batch_query()` and `hybrid_search()` on a server before v0.12.3: the
+  first recall of a new agent raised `NotFoundError` (`404 NAMESPACE_NOT_FOUND`). Such a server
+  answers a recall or search of an agent that has stored nothing with a 404 for some queries
+  (e.g. "What do I build?"); it is now treated as no memories, like a v0.12.3 server.
+  `DakeraAutoGenMemory.query()` treats only that 404 as no memories (it swallowed every 404).
 - The README's headline example passed `DakeraMemory` to `AssistantAgent(memory=[...])`, but
   `DakeraMemory` is not an AutoGen `Memory`, so the agent failed at its first model call
   (`AttributeError: ... has no attribute 'update_context'`). The README now uses

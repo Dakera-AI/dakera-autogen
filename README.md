@@ -448,10 +448,11 @@ python examples/assistant_agent.py
 - **`AttributeError: ... has no attribute 'update_context'`** — `DakeraMemory` was passed to
   `AssistantAgent(memory=[...])`. Use `DakeraAutoGenMemory`; `DakeraMemory` is the
   synchronous helper. `ImportError: autogen_core` means the `autogen` extra is not installed.
-- **`dakera.NotFoundError` (404 `NAMESPACE_NOT_FOUND`) on a server before v0.12.3** — such a
-  server can answer a recall for an agent that has stored nothing with 404 (v0.12.3 answers an
-  empty list). `DakeraAutoGenMemory.query()` and `clear()` treat it as no memories;
-  `DakeraMemory.query()` raises it — store a memory first, or upgrade the server.
+- **Nothing recalled for a new agent** — an agent that has stored nothing recalls nothing. A
+  server before v0.12.3 answers such a recall with 404 `NAMESPACE_NOT_FOUND` for some queries
+  (v0.12.3 answers an empty list); `DakeraAutoGenMemory` (`query()`, `update_context()`,
+  `clear()`) and `DakeraMemory` (`query()`, `batch_query()`, `hybrid_search()`) treat it as no
+  memories, so a new agent starts the same way on every v0.12 server. Other 404s are raised.
 - **Fewer results than expected, or none of the "context" the server returns** — recall
   returns at most `top_k` ranked memories. A v0.12.3 server can add a session's neighbouring
   memories after the ranked results; this package requests them separately and leaves them out.

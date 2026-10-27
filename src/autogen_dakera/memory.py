@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from dakera import DakeraClient
+from dakera import DakeraClient, ErrorCode, NotFoundError, RecalledMemory
 
 
 class DakeraMemory:
@@ -106,7 +106,6 @@ class DakeraMemory:
             kwargs["tags"] = tags
         if memory_type:
             kwargs["memory_type"] = memory_type
-        memories = self._client.recall(self._agent_id, query=query, **kwargs)
         return [
             {
                 "content": m.content,
@@ -115,8 +114,23 @@ class DakeraMemory:
                 "importance": m.importance,
                 "metadata": m.metadata,
             }
-            for m in memories.ranked[:k]
+            for m in self._recall_ranked(query, k, **kwargs)
         ]
+
+    def _recall_ranked(self, query: str, k: int, **kwargs: Any) -> list[RecalledMemory]:
+        """At most ``k`` ranked memories for ``query``; none if the agent has stored nothing.
+
+        A server before v0.12.3 answers a recall of an agent that has no memories with
+        ``404 NAMESPACE_NOT_FOUND`` for some queries (the agent's namespace is created by
+        its first stored memory); v0.12.3 returns no memories.
+        """
+        try:
+            response = self._client.recall(self._agent_id, query=query, **kwargs)
+        except NotFoundError as err:
+            if err.code != ErrorCode.NAMESPACE_NOT_FOUND:
+                raise
+            return []
+        return response.ranked[:k]
 
     def hybrid_search(
         self,
@@ -125,7 +139,13 @@ class DakeraMemory:
     ) -> list[dict[str, Any]]:
         """Combined vector + BM25 search; dicts with ``content``, ``id`` and ``score``."""
         k = top_k if top_k is not None else self._recall_k
-        results = self._client.search_memories(self._agent_id, query=query, top_k=k)
+        try:
+            results = self._client.search_memories(self._agent_id, query=query, top_k=k)
+        except NotFoundError as err:
+            # An agent that has stored nothing, on a server before v0.12.3.
+            if err.code != ErrorCode.NAMESPACE_NOT_FOUND:
+                raise
+            return []
         return [
             {"content": m.get("content", ""), "id": m.get("id", ""), "score": m.get("score", 0.0)}
             for m in results
@@ -138,12 +158,8 @@ class DakeraMemory:
         k = top_k if top_k is not None else self._recall_k
         results = []
         for q in queries:
-            memories = self._client.recall(
-                self._agent_id, query=q, top_k=k, neighborhood_mode="separate"
-            )
-            results.append(
-                [{"content": m.content, "id": m.id, "score": m.score} for m in memories.ranked[:k]]
-            )
+            memories = self._recall_ranked(q, k, top_k=k, neighborhood_mode="separate")
+            results.append([{"content": m.content, "id": m.id, "score": m.score} for m in memories])
         return results
 
     def forget(self, memory_id: str) -> None:

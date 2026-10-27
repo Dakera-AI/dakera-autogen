@@ -22,7 +22,7 @@ from autogen_core.memory import (
 )
 from autogen_core.model_context import ChatCompletionContext
 from autogen_core.models import SystemMessage
-from dakera import AsyncDakeraClient, NotFoundError
+from dakera import AsyncDakeraClient, ErrorCode, NotFoundError
 from dakera.models import BatchForgetRequest, BatchMemoryFilter
 from pydantic import BaseModel, Field, SecretStr
 from typing_extensions import Self
@@ -228,8 +228,11 @@ class DakeraAutoGenMemory(Memory, Component[DakeraAutoGenMemoryConfig]):
                 ),
                 cancellation_token,
             )
-        except NotFoundError:
-            # Servers before v0.12.3 answer 404 for an agent that has stored nothing.
+        except NotFoundError as err:
+            # Servers before v0.12.3 answer 404 NAMESPACE_NOT_FOUND for an agent that has
+            # stored nothing (for some queries); other 404s are real errors.
+            if err.code != ErrorCode.NAMESPACE_NOT_FOUND:
+                raise
             return MemoryQueryResult(results=[])
         results = []
         for memory in response.ranked[:top_k]:

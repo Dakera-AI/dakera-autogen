@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
-from dakera import DakeraClient
+from dakera import DakeraClient, ErrorCode, NotFoundError
 
 from autogen_dakera import DakeraMemory
 
@@ -142,3 +142,24 @@ def test_query_forwards_tags(memory):
     assert obj.query("q", tags=["work"]) == []
     _, kwargs = mock_client.recall.call_args
     assert kwargs["tags"] == ["work"]
+
+
+def test_agent_without_memories_on_an_older_server_recalls_nothing(memory):
+    # A server before v0.12.3 answers 404 NAMESPACE_NOT_FOUND for an agent that has
+    # stored nothing yet (for some queries); its first recall must not fail.
+    m, mock_client = memory
+    not_found = NotFoundError(
+        "Namespace not found", status_code=404, code=ErrorCode.NAMESPACE_NOT_FOUND
+    )
+    mock_client.recall.side_effect = not_found
+    mock_client.search_memories.side_effect = not_found
+    assert m.query("What do I build?") == []
+    assert m.batch_query(["a", "b"]) == [[], []]
+    assert m.hybrid_search("What do I build?") == []
+
+
+def test_other_not_found_errors_are_raised(memory):
+    m, mock_client = memory
+    mock_client.recall.side_effect = NotFoundError("gone", status_code=404)
+    with pytest.raises(NotFoundError):
+        m.query("What do I build?")

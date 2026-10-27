@@ -13,7 +13,7 @@ from autogen_core.memory import Memory, MemoryContent, MemoryMimeType
 from autogen_core.model_context import BufferedChatCompletionContext
 from autogen_core.models import SystemMessage, UserMessage
 from autogen_ext.models.replay import ReplayChatCompletionClient
-from dakera import AsyncDakeraClient, NotFoundError
+from dakera import AsyncDakeraClient, ErrorCode, NotFoundError
 from dakera.models import BatchForgetRequest, BatchMemoryFilter, RecallResponse
 
 from autogen_dakera import DakeraAutoGenMemory, DakeraAutoGenMemoryConfig
@@ -176,8 +176,16 @@ async def test_empty_query_skips_the_server(memory, client):
 
 
 async def test_query_of_unknown_agent_on_older_server_is_empty(memory, client):
-    client.recall.side_effect = NotFoundError("Namespace not found")
-    assert (await memory.query("anything")).results == []
+    client.recall.side_effect = NotFoundError(
+        "Namespace not found", status_code=404, code=ErrorCode.NAMESPACE_NOT_FOUND
+    )
+    assert (await memory.query("What do I build?")).results == []
+
+
+async def test_query_raises_other_not_found_errors(memory, client):
+    client.recall.side_effect = NotFoundError("gone", status_code=404)
+    with pytest.raises(NotFoundError):
+        await memory.query("What do I build?")
 
 
 async def test_update_context_adds_one_system_message(memory, client):

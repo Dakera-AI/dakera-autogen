@@ -34,8 +34,9 @@ def agent_id() -> str:
 
 def test_memory_round_trip(agent_id: str) -> None:
     memory = DakeraMemory(API_URL, agent_id, api_key=API_KEY, recall_k=2)
-    # An agent that has stored nothing recalls nothing (no 404 from v0.12.3).
-    assert memory.query("anything") == []
+    # An agent that has stored nothing recalls nothing; "What do I build?" is a query a
+    # server before v0.12.3 answers with 404 NAMESPACE_NOT_FOUND.
+    assert memory.query("What do I build?") == []
 
     stored = [
         memory.add("Project Falcon ships on April 15", tags=["project"]),
@@ -137,7 +138,7 @@ async def test_autogen_memory_with_assistant_agent(agent_id: str) -> None:
 
     memory = DakeraAutoGenMemory(API_URL, agent_id, api_key=API_KEY or None, recall_k=2)
     try:
-        assert (await memory.query("anything")).results == []
+        assert (await memory.query("What do I build?")).results == []
         await memory.add(
             MemoryContent(content="The user prefers metric units", mime_type=MemoryMimeType.TEXT)
         )
