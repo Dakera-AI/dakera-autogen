@@ -39,9 +39,7 @@ class DakeraKnowledgeGraph:
         result = self._client.knowledge_path(self._agent_id, from_id=from_id, to_id=to_id)
         return {"path": result.path, "hop_count": result.hop_count}
 
-    def link(
-        self, source_id: str, target_id: str, *, label: str | None = None
-    ) -> dict[str, Any]:
+    def link(self, source_id: str, target_id: str, *, label: str | None = None) -> dict[str, Any]:
         """Link two of this agent's memories (``POST /v1/memories/{id}/links``).
 
         The server records every explicit link as ``linked_by``; ``label`` is
@@ -75,9 +73,7 @@ class DakeraKnowledgeGraph:
         """
         return self._client.knowledge_graph(self._agent_id, memory_id=memory_id, depth=depth)
 
-    def summarize(
-        self, memory_ids: list[str], *, target_type: str | None = None
-    ) -> dict[str, Any]:
+    def summarize(self, memory_ids: list[str], *, target_type: str | None = None) -> dict[str, Any]:
         """Summarize the given memories into one new summary memory.
 
         ``POST /v1/knowledge/summarize`` needs at least two ``memory_ids`` and
@@ -90,6 +86,14 @@ class DakeraKnowledgeGraph:
             self._agent_id, memory_ids=memory_ids, target_type=target_type
         )
 
-    def deduplicate(self) -> dict[str, Any]:
-        """Deduplicate entities in the graph."""
-        return self._client.deduplicate(self._agent_id)
+    def deduplicate(
+        self, *, threshold: float | None = None, dry_run: bool = False
+    ) -> dict[str, Any]:
+        """Merge the agent's near-duplicate memories (``POST /v1/knowledge/deduplicate``).
+
+        ``threshold`` is the similarity above which two memories count as duplicates
+        (server default when ``None``); ``dry_run=True`` only reports them. From server
+        v0.12.3 merged-away memories can be restored for a while (the SDK's
+        ``list_deduplicated()`` / ``restore_deduplicated()``).
+        """
+        return self._client.deduplicate(self._agent_id, threshold=threshold, dry_run=dry_run)

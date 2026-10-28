@@ -25,7 +25,7 @@ jobs:
 
     services:
       dakera:
-        image: ghcr.io/dakera-ai/dakera:0.12.0
+        image: ghcr.io/dakera-ai/dakera:0.12.3
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
@@ -36,12 +36,8 @@ jobs:
           DAKERA_PORT: "3300"
         ports:
           - 3300:3300
-        options: >-
-          --health-cmd "curl -f http://localhost:3300/health || exit 1"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-          --health-start-period 15s
+        # No in-container --health-cmd: images >= 0.12.3 ship no curl. Readiness is
+        # polled from the runner in "Wait for Dakera".
 
     steps:
       - uses: actions/checkout@v7
@@ -53,11 +49,11 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,autogen]"
 
       - name: Wait for Dakera
         run: |
-          for i in $(seq 1 30); do
+          for i in $(seq 1 90); do
             if curl -sf http://localhost:3300/health; then
               echo "Dakera is ready"
               exit 0
@@ -70,15 +66,14 @@ jobs:
       - name: Run integration tests
         env:
           DAKERA_API_URL: http://localhost:3300
-        run: pytest tests/ -v --tb=short -m "integration or not unit_only"
+        run: pytest tests/ -v --tb=short
 
   examples:
     name: Examples
-    continue-on-error: true
     runs-on: ubuntu-latest
     services:
       dakera:
-        image: ghcr.io/dakera-ai/dakera:0.12.0
+        image: ghcr.io/dakera-ai/dakera:0.12.3
         credentials:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
@@ -89,12 +84,8 @@ jobs:
           DAKERA_PORT: "3300"
         ports:
           - 3300:3300
-        options: >-
-          --health-cmd "curl -f http://localhost:3300/health || exit 1"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-          --health-start-period 15s
+        # No in-container --health-cmd: images >= 0.12.3 ship no curl. Readiness is
+        # polled from the runner in "Wait for Dakera".
 
     steps:
       - uses: actions/checkout@v7
@@ -106,11 +97,11 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,autogen]"
 
       - name: Wait for Dakera
         run: |
-          for i in $(seq 1 30); do
+          for i in $(seq 1 90); do
             if curl -sf http://localhost:3300/health; then
               echo "Dakera is ready"
               exit 0
@@ -125,6 +116,7 @@ jobs:
           DAKERA_API_URL: http://localhost:3300
           DAKERA_API_KEY: test-key
         run: |
+          python examples/assistant_agent.py
           python examples/basic_memory.py
           python examples/advanced_memory.py
           python examples/batch_operations.py

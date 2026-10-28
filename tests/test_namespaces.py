@@ -41,10 +41,10 @@ def test_create_with_metadata(ns_mgr):
     mock_ns.vector_count = 0
     mock_client.create_namespace.return_value = mock_ns
 
-    mgr.create("ns2", metadata={"env": "prod"})
-    mock_client.create_namespace.assert_called_once_with(
-        "ns2", dimensions=None, index_type=None, metadata={"env": "prod"}
-    )
+    # The server's create route has no metadata field (it was dropped); it is not sent.
+    with pytest.warns(DeprecationWarning):
+        mgr.create("ns2", dimensions=8, metadata={"env": "prod"})
+    mock_client.create_namespace.assert_called_once_with("ns2", dimensions=8, index_type=None)
 
 
 def test_get_namespace(ns_mgr):

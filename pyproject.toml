@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autogen-dakera"
-version = "0.3.0"
+version = "0.4.0"
 description = "AutoGen integration for the Dakera AI memory platform"
 readme = "README.md"
 license = {text = "MIT"}
@@ -23,15 +23,24 @@ classifiers = [
     "Typing :: Typed",
 ]
 keywords = ["autogen", "dakera", "memory", "ai", "agents"]
-dependencies = ["dakera>=0.13.1"]
+dependencies = ["dakera>=0.14.1"]
 
 [project.optional-dependencies]
-autogen = ["autogen-agentchat>=0.4.0"]
-dev = ["pytest>=7.0.0", "pytest-asyncio>=0.21.0", "ruff>=0.1.0", "mypy>=1.0.0", "pip-audit>=2.0.0"]
+autogen = ["autogen-core>=0.4.3", "autogen-agentchat>=0.4.3", "dakera[async]>=0.14.1"]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "pip-audit>=2.0.0",
+    "autogen-ext>=0.4.3",
+]
 
 [project.urls]
 Homepage = "https://github.com/dakera-ai/dakera-autogen"
-Documentation = "https://docs.dakera.ai/integrations/autogen"
+Documentation = "https://dakera.ai/integrations/autogen.html"
+Changelog = "https://github.com/Dakera-AI/dakera-autogen/blob/main/CHANGELOG.md"
+Issues = "https://github.com/Dakera-AI/dakera-autogen/issues"
 Repository = "https://github.com/dakera-ai/dakera-autogen"
 
 [tool.setuptools.packages.find]

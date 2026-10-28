@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 from dakera import DakeraClient
@@ -22,10 +23,20 @@ class DakeraNamespaceManager:
         index_type: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Create a namespace."""
-        ns = self._client.create_namespace(
-            name, dimensions=dimensions, index_type=index_type, metadata=metadata
-        )
+        """Create a namespace and return its details.
+
+        ``dimensions`` is required by the server (``422`` without it). ``metadata`` is
+        deprecated and not sent: the server's create route has no metadata field and
+        dropped it without storing it.
+        """
+        if metadata is not None:
+            warnings.warn(
+                "DakeraNamespaceManager.create(metadata=...) is not sent: the server does "
+                "not store namespace metadata",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        ns = self._client.create_namespace(name, dimensions=dimensions, index_type=index_type)
         return {
             "name": ns.name,
             "dimensions": ns.dimensions,
